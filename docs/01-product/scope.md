@@ -112,15 +112,7 @@ The execution engine is responsible for simulating the outcome of eligible order
 
 A successful execution results in:
 
-Order
-  ↓
-Execution
-  ↓
-Transaction
-  ↓
-Position Update
-  ↓
-Portfolio Update
+Order -> Execution -> Transaction -> Position Update -> Portfolio Update
 
 The execution mechanism is intentionally simplified and does not represent a real exchange matching engine.
 
@@ -134,6 +126,7 @@ View transaction details.
 View transaction history.
 Filter transactions.
 Review historical trading activity.
+
 ## 3.8. Market Data
 
 The MVP uses simulated or seeded market data.
@@ -171,6 +164,7 @@ Execute real-money trades.
 Hold real customer funds.
 Connect to a user's bank account.
 Provide custody services.
+
 ## 4.2. Direct Broker Integration
 
 The MVP will not integrate directly with brokers such as:
@@ -194,6 +188,7 @@ Full order book management.
 Price-time priority matching.
 High-frequency trading.
 Exchange-grade market infrastructure.
+
 ## 4.4. Investment Advisory
 
 The system will not provide:
@@ -202,6 +197,7 @@ Financial advice.
 Investment recommendations.
 Guaranteed returns.
 Personalized investment strategies.
+
 ## 4.5. Automated Trading
 
 The MVP will not include:
@@ -236,6 +232,7 @@ Public portfolios.
 Copy trading.
 Social trading.
 Chat or messaging.
+
 ## 4.8. Advanced Analytics
 
 The MVP will provide basic portfolio performance calculations.
@@ -247,6 +244,7 @@ Quantitative factor models.
 Machine learning-based predictions.
 Automated strategy generation.
 Complex risk modeling.
+
 # 5. Technical Scope
 
 The project is primarily focused on backend engineering.
@@ -276,19 +274,14 @@ Message brokers.
 Background workers.
 Event-driven processing.
 Cloud services.
+
 # 6. Architecture Boundary
 
 The initial system will follow a modular monolith architecture.
 
 The system should maintain clear boundaries between:
 
-API
-  ↓
-Application
-  ↓
-Domain
-  ↑
-Infrastructure
+API -> Application -> Domain <- Infrastructure
 
 The domain layer should remain independent from infrastructure and external service implementations.
 
@@ -332,7 +325,9 @@ Automated tests.
 Error handling.
 Logging.
 Dockerized local deployment.
+
 # 8. Development Phases
+
 ## Phase 1 — Foundation
 
 Focus:
@@ -343,6 +338,7 @@ Authentication.
 User management.
 Database foundation.
 Basic API infrastructure.
+
 ## Phase 2 — Core Portfolio
 
 Focus:
@@ -351,6 +347,7 @@ Portfolio management.
 Asset management.
 Position management.
 Portfolio valuation.
+
 ## Phase 3 — Trading Workflow
 
 Focus:
@@ -361,6 +358,7 @@ Order validation.
 Simulated execution.
 Transactions.
 Position updates.
+
 ## Phase 4 — Reliability
 
 Focus:
@@ -371,6 +369,7 @@ Idempotency.
 Error handling.
 Audit logging.
 Integration testing.
+
 ## Phase 5 — Performance
 
 Focus:
@@ -406,36 +405,47 @@ Monitoring.
 Logging.
 Health checks.
 Operational documentation.
+
 # 9. Future Scope
 
 The following features may be considered after the core system is stable.
 
 ## Trading
+
 Advanced order types.
 Stop orders.
 Trailing stops.
 Order book simulation.
 More realistic execution models.
+
 ## Market Data
+
 Real-time market data.
 Historical price data.
 External market-data providers.
+
 ## Portfolio
+
 Advanced performance analytics.
 Portfolio risk metrics.
 Asset allocation analysis.
 Benchmark comparison.
+
 ## Trading Strategies
+
 Strategy backtesting.
 Paper trading.
 Strategy simulation.
 Algorithmic trading.
+
 ## Infrastructure
+
 Advanced event-driven architecture.
 Distributed processing.
 Service decomposition.
 Kubernetes.
 Advanced observability.
+
 # 10. Scope Management Rules
 
 The project follows these rules when evaluating new features.
@@ -494,25 +504,7 @@ The scope document should be updated when the project's boundaries change.
 
 A significant scope change should follow this process:
 
-New Feature
-    ↓
-Define the Problem
-    ↓
-Evaluate Product Value
-    ↓
-Evaluate Engineering Value
-    ↓
-Determine Dependencies
-    ↓
-Determine Scope
-    ↓
-Update Requirements
-    ↓
-Update Roadmap
-    ↓
-Update Architecture / Domain Docs if necessary
-    ↓
-Implement
+New Feature -> Define the Problem -> Evaluate Product Value -> Evaluate Engineering Value -> Determine Dependencies -> Determine Scope -> Update Requirements -> Update Roadmap -> Update Architecture / Domain Docs if necessary-> Implement
 
 Architectural changes should also be documented through an ADR when appropriate.
 

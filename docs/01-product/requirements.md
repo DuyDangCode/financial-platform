@@ -521,50 +521,53 @@ Docker-based deployment.
 Automated testing in CI.
 Automated deployment through CI/CD.
 Environment-specific configuration.
-15. Requirement Priorities
+
+# 15. Requirement Priorities
 
 Requirements are categorized using the following priorities:
 
 Priority Meaning
-P0 Critical. Required for the system to function.
-P1 Important. Required for the MVP.
-P2 Useful. Can be implemented after the MVP.
-P3 Optional. Future enhancement.
+
+- P0 Critical. Required for the system to function.
+- P1 Important. Required for the MVP.
+- P2 Useful. Can be implemented after the MVP.
+- P3 Optional. Future enhancement.
 
 # 16. MVP Requirements
 
 The initial MVP should focus on the following capabilities:
 
 Authentication
-FR-001 User Registration
-FR-002 User Authentication
-FR-003 User Authorization
-Portfolio
-FR-004 Create Portfolio
-FR-005 View Portfolio
-FR-006 Update Portfolio
-Assets
-FR-007 Asset Management
-FR-008 View Asset Information
-Positions
-FR-009 Position Tracking
-FR-010 Position Update
-Orders
-FR-011 Create Order
-FR-012 Validate Order
-FR-013 Order Lifecycle
-FR-014 Cancel Order
-FR-015 View Order
-Transactions
-FR-018 Create Transaction
-FR-019 Transaction History
-Performance
-FR-020 Portfolio Valuation
-FR-021 Profit and Loss
-Data Integrity
-FR-027 Transactional Consistency
-FR-028 Concurrency Control
-FR-029 Idempotency
+
+- FR-001 User Registration
+- FR-002 User Authentication
+- FR-003 User Authorization
+- Portfolio
+- FR-004 Create Portfolio
+- FR-005 View Portfolio
+- FR-006 Update Portfolio
+- Assets
+- FR-007 Asset Management
+- FR-008 View Asset Information
+- Positions
+- FR-009 Position Tracking
+- FR-010 Position Update
+- Orders
+- FR-011 Create Order
+- FR-012 Validate Order
+- FR-013 Order Lifecycle
+- FR-014 Cancel Order
+- FR-015 View Order
+- Transactions
+- FR-018 Create Transaction
+- FR-019 Transaction History
+- Performance
+- FR-020 Portfolio Valuation
+- FR-021 Profit and Loss
+- Data Integrity
+- FR-027 Transactional Consistency
+- FR-028 Concurrency Control
+- FR-029 Idempotency
 
 # 17. Requirement Evolution
 
@@ -572,10 +575,10 @@ Requirements are expected to evolve as the project develops.
 
 New requirements should:
 
-Be discussed and documented.
-Be assigned a priority.
-Be reflected in the relevant documentation.
-Be implemented through a defined development task.
-Update related domain, API, database, or architecture documentation when necessary.
+- Be discussed and documented.
+- Be assigned a priority.
+- Be reflected in the relevant documentation.
+- Be implemented through a defined development task.
+- Update related domain, API, database, or architecture documentation when necessary.
 
 The requirements document represents the current expected behavior of the system and should not be treated as a historical record of every change.

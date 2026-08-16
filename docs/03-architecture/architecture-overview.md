@@ -33,10 +33,10 @@ The initial deployment consists of a single application.
 ┌──────────────────────────────────────────────┐
 │              Financial Platform              │
 │                                              │
-│  ┌─────────┐ ┌──────────┐ ┌──────────────┐ │
-│  │ Identity│ │ Portfolio│ │   Trading    │ │
-│  │ Module  │ │  Module  │ │    Module    │ │
-│  └─────────┘ └──────────┘ └──────────────┘ │
+│  ┌─────────┐ ┌──────────┐ ┌──────────────┐   │  
+│  │ Identity│ │ Portfolio│ │   Trading    │   │
+│  │ Module  │ │  Module  │ │    Module    │   │
+│  └─────────┘ └──────────┘ └──────────────┘   │
 │                                              │
 └──────────────────────────────────────────────┘
                     │

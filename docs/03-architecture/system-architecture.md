@@ -36,11 +36,11 @@ It focuses on how requests, business operations, data persistence, external serv
                     ┌────────────────────────┐
                     │        Domain          │
                     │                        │
-                    │ Entities                │
-                    │ Aggregates              │
-                    │ Value Objects            │
-                    │ Domain Services          │
-                    │ Domain Events            │
+                    │ Entities               │ 
+                    │ Aggregates             │ 
+                    │ Value Objects          │  
+                    │ Domain Services        │  
+                    │ Domain Events          │  
                     └───────────┬────────────┘
                                 │
                     ┌───────────┴────────────┐
