@@ -106,7 +106,7 @@ The application follows a **Modular Monolith + Clean Architecture** approach.
                          │    Application       │
                          │                      │
                          │ Commands / Queries   │
-                         │ Use Cases             │
+                         │ Use Cases            │
                          └──────────┬───────────┘
                                     │
                                     ▼
@@ -114,9 +114,9 @@ The application follows a **Modular Monolith + Clean Architecture** approach.
                          │        Domain        │
                          │                      │
                          │ Entities             │
-                         │ Aggregates            │
-                         │ Value Objects         │
-                         │ Business Rules        │
+                         │ Aggregates           │
+                         │ Value Objects        │
+                         │ Business Rules       │
                          └──────────────────────┘
                                     ▲
                                     │
@@ -124,10 +124,10 @@ The application follows a **Modular Monolith + Clean Architecture** approach.
                          │    Infrastructure    │
                          │                      │
                          │ EF Core              │
-                         │ PostgreSQL            │
-                         │ Redis                 │
-                         │ Messaging             │
-                         │ External Services     │
+                         │ PostgreSQL           │
+                         │ Redis                │
+                         │ Messaging            │
+                         │ External Services    │
                          └──────────────────────┘
 ```
 
