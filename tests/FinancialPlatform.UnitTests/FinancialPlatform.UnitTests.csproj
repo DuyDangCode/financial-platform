@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FinancialPlatform.Api\FinancialPlatform.Api.csproj" />
     <ProjectReference Include="..\..\src\FinancialPlatform.Domain\FinancialPlatform.Domain.csproj" />
     <ProjectReference Include="..\..\src\FinancialPlatform.Application\FinancialPlatform.Application.csproj" />
   </ItemGroup>
