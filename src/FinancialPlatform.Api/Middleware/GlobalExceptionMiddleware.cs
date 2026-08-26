@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FinancialPlatform.Api.Models.Response;
-using FinancialPlatform.Domain.Exeptions;
+using FinancialPlatform.Domain.Exceptions;
 
 namespace FinancialPlatform.Api.Middleware;
 
@@ -37,7 +37,9 @@ public class GlobalExceptionMiddleware
 
         var statusCode = exception switch
         {
+            UserAlreadyExistsException => HttpStatusCode.Conflict,
             InvalidCredentialsException => HttpStatusCode.Unauthorized,
+            DomainException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError
         };
 
