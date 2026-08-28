@@ -1,5 +1,5 @@
 using FinancialPlatform.Domain.Entities;
-using FinancialPlatform.Domain.Interface;
+using FinancialPlatform.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinancialPlatform.Infrastructure.Persistence.Repositories;

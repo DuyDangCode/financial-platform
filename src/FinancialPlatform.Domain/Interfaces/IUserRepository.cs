@@ -1,6 +1,6 @@
 using FinancialPlatform.Domain.Entities;
 
-namespace FinancialPlatform.Domain.Interface;
+namespace FinancialPlatform.Domain.Interfaces;
 
 public interface IUserRepository
 {

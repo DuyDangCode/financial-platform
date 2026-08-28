@@ -1,7 +1,7 @@
 using FinancialPlatform.Application.Abstractions.Identity;
 using FinancialPlatform.Application.Features.Authentication.DTOs;
-using FinancialPlatform.Domain.Exeptions;
-using FinancialPlatform.Domain.Interface;
+using FinancialPlatform.Domain.Exceptions;
+using FinancialPlatform.Domain.Interfaces;
 
 namespace FinancialPlatform.Application.Features.Authentication.Commands.Login;
 
@@ -9,16 +9,16 @@ public sealed class LoginCommandHandler
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IAuthSessionIssuer _authSessionIssuer;
 
     public LoginCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IAuthSessionIssuer authSessionIssuer)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
-        _jwtTokenGenerator = jwtTokenGenerator;
+        _authSessionIssuer = authSessionIssuer;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand command, CancellationToken cancellationToken = default)
@@ -36,14 +36,6 @@ public sealed class LoginCommandHandler
             throw new InvalidCredentialsException();
         }
 
-        var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user);
-
-        return new LoginResponse(
-            token,
-            expiresAt,
-            user.Id,
-            user.UserName,
-            user.Email,
-            user.DisplayName ?? user.UserName);
+        return await _authSessionIssuer.IssueAsync(user, cancellationToken);
     }
 }

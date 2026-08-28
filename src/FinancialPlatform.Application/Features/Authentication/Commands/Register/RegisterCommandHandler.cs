@@ -3,52 +3,45 @@ namespace FinancialPlatform.Application.Features.Authentication.Commands.Registe
 using FinancialPlatform.Application.Abstractions.Identity;
 using FinancialPlatform.Application.Features.Authentication.DTOs;
 using FinancialPlatform.Domain.Entities;
-using FinancialPlatform.Domain.Exeptions;
-using FinancialPlatform.Domain.Interface;
+using FinancialPlatform.Domain.Exceptions;
+using FinancialPlatform.Domain.Interfaces;
 
 public class RegisterCommandHandler
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IAuthSessionIssuer _authSessionIssuer;
 
     public RegisterCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator jwtTokenGenerator
+        IAuthSessionIssuer authSessionIssuer
     )
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
-        _jwtTokenGenerator = jwtTokenGenerator;
+        _authSessionIssuer = authSessionIssuer;
     }
 
-    public async Task<LoginResponse> Handler(RegisterCommand command)
+    public async Task<LoginResponse> Handle(RegisterCommand command, CancellationToken cancellationToken = default)
     {
-        var passwordHash = _passwordHasher.Hash(command.Password);
-
-        var userData = new User()
+        var existingUser = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
+        if (existingUser is not null)
         {
-            UserName = command.UserName,
-            Email = command.UserName,
-            PasswordHash = passwordHash,
-            FirstName = command.FirstName,
-            LastName = command.LastName,
-            DisplayName = command.DisplayName,
-            PhoneNumber = command.PhoneNumber,
-        };
+            throw new UserAlreadyExistsException();
+        }
 
-        var user = await User.Create(userData, _userRepository);
+        var user = User.Create(
+            command.UserName,
+            command.Email,
+            _passwordHasher.Hash(command.Password),
+            command.FirstName,
+            command.LastName,
+            command.DisplayName,
+            command.PhoneNumber);
 
-        var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user);
+        await _userRepository.AddAsync(user, cancellationToken);
 
-        return new LoginResponse(
-            token,
-            expiresAt,
-            user.Id,
-            user.UserName,
-            user.Email,
-            user.DisplayName ?? user.UserName
-        );
+        return await _authSessionIssuer.IssueAsync(user, cancellationToken);
     }
 }

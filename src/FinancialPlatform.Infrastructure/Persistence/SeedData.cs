@@ -1,5 +1,5 @@
 using FinancialPlatform.Domain.Entities;
-using FinancialPlatform.Domain.Interface;
+using FinancialPlatform.Application.Abstractions.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,7 +13,7 @@ public static class SeedData
         using var scope = services.CreateScope();
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var passwordHasher = scope.ServiceProvider.GetRequiredService<FinancialPlatform.Application.Abstractions.Identity.IPasswordHasher>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger(nameof(SeedData));
 
@@ -24,18 +24,15 @@ public static class SeedData
             return;
         }
 
-        dbContext.Users.Add(new User
-        {
-            Id = Guid.NewGuid(),
-            UserName = "demo",
-            Email = "demo@financialplatform.com",
-            PasswordHash = passwordHasher.Hash("Demo@123"),
-            FirstName = "Demo",
-            LastName = "User",
-            DisplayName = "Demo User",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        });
+        var demoUser = User.Create(
+            "demo",
+            "demo@financialplatform.com",
+            passwordHasher.Hash("Demo@123"),
+            firstName: "Demo",
+            lastName: "User",
+            displayName: "Demo User");
+
+        dbContext.Users.Add(demoUser);
 
         await dbContext.SaveChangesAsync();
 

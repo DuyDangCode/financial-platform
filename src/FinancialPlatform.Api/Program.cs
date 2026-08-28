@@ -54,6 +54,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-await FinancialPlatform.Infrastructure.Persistence.SeedData.SeedAsync(app.Services);
+// await FinancialPlatform.Infrastxructure.Persistence.SeedData.SeedAsync(app.Services);
 
 app.Run();

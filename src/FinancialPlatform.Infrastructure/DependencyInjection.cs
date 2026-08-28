@@ -1,5 +1,5 @@
 using FinancialPlatform.Application.Abstractions.Identity;
-using FinancialPlatform.Domain.Interface;
+using FinancialPlatform.Domain.Interfaces;
 using FinancialPlatform.Infrastructure.Identity;
 using FinancialPlatform.Infrastructure.Persistence;
 using FinancialPlatform.Infrastructure.Persistence.Repositories;
@@ -16,19 +16,30 @@ public static class DependencyInjection
         IConfiguration configuration
     )
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+
         services.AddDbContext<AppDbContext>(options =>
-            options.UseInMemoryDatabase("FinancialPlatformDemoDb")
-        );
+        {
+            if (!string.IsNullOrWhiteSpace(connectionString))
+            {
+                options.UseNpgsql(connectionString);
+            }
+            else
+            {
+                options.UseInMemoryDatabase("FinancialPlatformDemoDb");
+            }
+        });
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
-        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
+        services.AddScoped<IAuthSessionIssuer, AuthSessionIssuer>();
 
         return services;
     }
 }
-

@@ -1,7 +1,7 @@
-namespace FinancialPlatform.Domain.Exeptions;
+namespace FinancialPlatform.Domain.Exceptions;
 
-public class ExistUserException : Exception
+public class UserAlreadyExistsException : DomainException
 {
-    public ExistUserException()
-        : base("User is existed") { }
+    public UserAlreadyExistsException()
+        : base("A user with this email already exists.") { }
 }
