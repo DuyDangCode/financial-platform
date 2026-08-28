@@ -1,69 +1,152 @@
-import Image from "next/image";
+import type { ReactNode } from "react";
+import { HomeCta } from "@/components/home-cta";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+
+interface Feature {
+  title: string;
+  description: string;
+  icon: ReactNode;
+}
+
+function ChartIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="m7 14 4-4 4 3 5-6" />
+    </svg>
+  );
+}
+
+function ExchangeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <path d="M8 3 4 7l4 4" />
+      <path d="M4 7h16" />
+      <path d="m16 21 4-4-4-4" />
+      <path d="M20 17H4" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" />
+    </svg>
+  );
+}
+
+const FEATURES: Feature[] = [
+  {
+    title: "Portfolio tracking",
+    description:
+      "Create portfolios, follow valuations and review performance across all of your positions.",
+    icon: <ChartIcon />,
+  },
+  {
+    title: "Trading & orders",
+    description:
+      "Place and manage simulated trading orders end-to-end, from ticket to transaction history.",
+    icon: <ExchangeIcon />,
+  },
+  {
+    title: "Market data",
+    description:
+      "Look up supported assets and monitor the market context behind every decision you make.",
+    icon: <GlobeIcon />,
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <SiteHeader />
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-28 border-b border-zinc-800/70">
+          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
+            Portfolio &amp; trading operations
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-zinc-50 sm:text-5xl">
+            Your capital, clearly under control.
+          </h1>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-400">
+            Track portfolios, place simulated trades and follow market data —
+            one platform built for clarity, from first deposit to full
+            performance review.
+          </p>
+          <div className="mt-8">
+            <HomeCta />
+          </div>
+        </section>
+
+        {/* Feature grid */}
+        <section aria-labelledby="features-heading" className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
+          <h2
+            id="features-heading"
+            className="text-2xl font-semibold tracking-tight text-zinc-50"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            What you can do here
+          </h2>
+          <p className="mt-2 max-w-xl text-base text-zinc-400">
+            A focused roadmap of capabilities, delivered module by module.
+          </p>
+          <ul className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <li
+                key={feature.title}
+                className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-6"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                  {feature.icon}
+                </span>
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-50">
+                    {feature.title}
+                  </h3>
+                  <span className="mt-1 inline-block rounded-full border border-zinc-700 bg-zinc-950 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+                    Roadmap
+                  </span>
+                </div>
+                <p className="text-sm leading-6 text-zinc-400">
+                  {feature.description}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
-    </div>
+      <SiteFooter />
+    </>
   );
 }

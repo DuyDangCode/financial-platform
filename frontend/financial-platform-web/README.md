@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Financial Platform — Frontend
+
+Next.js 16 web application for the Financial Platform. Provides authentication (login/register) and a landing page. Connects to the .NET 8 backend API.
+
+## Tech Stack
+
+| Technology | Version | Notes |
+|---|---|---|
+| Next.js | 16.3.1 | App Router, TypeScript |
+| React | 19.2.8 | Server Components by default |
+| Tailwind CSS | v4 | Configured via `@theme` in CSS (no config file) |
+| TypeScript | ^5 | Strict mode |
+| ESLint | v9 | Flat config |
+
+## Prerequisites
+
+- Node.js (version managed via root `mise.toml`)
+- npm
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_API_URL` | No | `https://localhost:7290` | Backend API base URL |
 
-## Learn More
+Create a `.env.local` file to override defaults for local development.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+frontend/financial-platform-web/
+├── app/                  # App Router pages and layouts
+│   ├── layout.tsx        # Root layout (AuthProvider, fonts, dark theme)
+│   ├── page.tsx          # Landing page
+│   ├── login/            # Login page + form
+│   └── register/         # Register page + form
+├── components/           # Shared UI components
+├── lib/                  # Utilities and API client
+│   ├── api.ts            # Fetch wrapper (envelope parsing, error handling)
+│   └── auth.ts           # Auth functions (login/register/logout, localStorage)
+└── public/               # Static assets
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Commands
 
-## Deploy on Vercel
+```bash
+npm run dev      # Start dev server
+npm run build    # Production build
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API Integration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All API calls go through `lib/api.ts`. The backend wraps responses in an envelope:
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
+}
+```
+
+Currently only `postJson` is implemented. The auth module (`lib/auth.ts`) handles login, registration, and logout against the backend's `/api/auth/*` endpoints.
+
+## Authentication
+
+- Auth state is managed via React Context (`components/auth-provider.tsx`).
+- Session is persisted in `localStorage` under key `fp.auth.session`.
+- Access auth state via the `useAuth()` hook.
+
+## Current State
+
+Only the authentication module (login, register, logout) and a landing page are implemented. Dashboard, portfolio, trading, and market data features are planned but not yet built.
