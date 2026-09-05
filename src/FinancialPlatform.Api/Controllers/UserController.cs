@@ -1,6 +1,4 @@
 namespace FinancialPlatform.Api.Controllers;
 
-class UserController
-{
+class UserController { }
 
-}
