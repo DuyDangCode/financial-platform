@@ -10,19 +10,30 @@ The model focuses on business behavior and invariants rather than persistence de
 
 # 2. Entity Overview
 
-The initial domain model contains:
+The domain model (`src/FinancialPlatform.Domain/Entities/`) contains:
 
 ```text
-User
-Portfolio
-Asset
-Position
-Order
-Execution
-Transaction
+Identity & Cross-Cutting      Portfolio Module          Trading Module
+├── User                      ├── Portfolio             ├── Order
+├── RefreshToken              ├── Asset                 ├── Execution
+├── PasswordResetToken        └── Position              └── Transaction
+├── Role
+├── UserRole
+└── AuditLog
 ```
 
-Supporting value objects include:
+Supporting enums (`src/FinancialPlatform.Domain/Enums/`) include:
+
+```text
+PortfolioStatus (ACTIVE, DISABLED)
+AssetType       (STOCK, ETF)
+AssetStatus     (ACTIVE, INACTIVE)
+OrderSide       (BUY, SELL)
+OrderType       (MARKET, LIMIT)
+OrderStatus     (PENDING, PROCESSING, FILLED, REJECTED, CANCELLED)
+```
+
+Supporting value objects (conceptual / planned refactoring targets) include:
 
 ```text
 Money
@@ -35,31 +46,60 @@ UserId
 
 ---
 
-# 3. User
+# 3. Identity & Audit Entities
 
-## Responsibility
+## 3.1. User (`User.cs` — Implemented)
+
+### Responsibility
 
 Represents an account holder using the platform.
 
-## Key Attributes
+### Key Attributes
 
 ```text
-UserId
-Email
-DisplayName
-Status
-CreatedAt
+Id (Guid, inherited from BaseEntity)
+UserName (string, required, <= 256 chars, trimmed)
+Email (string, required, <= 256 chars, normalized lowercase)
+PasswordHash (string, required, <= 512 chars)
+FirstName (string?)
+LastName (string?)
+DisplayName (string?)
+PhoneNumber (string?)
+IsActive (bool, default true)
+CreatedAt / CreatedBy / UpdatedAt / UpdatedBy (from BaseEntity)
 ```
 
-## Behavior
+### Behavior
 
-- Activate.
-- Disable.
-- Update profile information.
+- `User.Create(userName, email, passwordHash, firstName, lastName, displayName, phoneNumber)` — Factory validating invariants and normalizing email to lowercase.
+- `Activate()` — Sets `IsActive = true`.
+- `Deactivate()` — Sets `IsActive = false`.
+- `UpdateProfile(firstName, lastName, displayName, phoneNumber)` — Updates optional profile fields.
+- `SetPassword(passwordHash)` — Replaces password hash after validation.
 
 ---
 
-# 4. Portfolio
+## 3.2. RefreshToken & PasswordResetToken (`RefreshToken.cs`, `PasswordResetToken.cs` — Implemented)
+
+- **`RefreshToken`**: Tracks a 7-day opaque session renewal token (`UserId`, `Token`, `ExpiresAt`, `RevokedAt`, computed `IsActive`). Supports `RefreshToken.Create(...)` and idempotent `Revoke()`.
+- **`PasswordResetToken`**: Tracks a 15-minute one-time reset code (`UserId`, `Code`, `ExpiresAt`, `UsedAt`, computed `IsActive`). Supports `PasswordResetToken.Create(...)` and `MarkUsed()`.
+
+---
+
+## 3.3. Role & UserRole (`Role.cs`, `UserRole.cs` — Implemented in Domain)
+
+- **`Role`**: Named authorization role (`Id`, `Name` <= 64 chars). Created via `Role.Create(name)`. Seeded roles: `Investor`, `Administrator`.
+- **`UserRole`**: Join entity (`UserId`, `RoleId`, `AssignedAt`). Intentionally does **not** inherit `BaseEntity` because the physical table uses a composite primary key `(UserId, RoleId)`. Created via `UserRole.Create(userId, roleId)`.
+
+---
+
+## 3.4. AuditLog (`AuditLog.cs` — Implemented in Domain)
+
+- **`AuditLog`**: Append-only record of business and security events (`Id` as `long` database identity, `ActorUserId`, `Action` <= 64 chars, `EntityType` <= 64 chars, `EntityId` <= 64 chars, `OccurredAt`, `IpAddress` <= 45 chars, `Details` JSON string). Intentionally does **not** inherit `BaseEntity`. Created via `AuditLog.Create(...)`.
+
+---
+
+# 4. Portfolio (`Portfolio.cs` — Implemented in Domain)
 
 ## Responsibility
 
@@ -68,110 +108,122 @@ Represents an investment portfolio owned by a user.
 ## Key Attributes
 
 ```text
-PortfolioId
-UserId
-Name
-Status
-CreatedAt
-UpdatedAt
+Id (Guid)
+UserId (Guid, non-empty)
+Name (string, required, <= 128 chars, trimmed)
+BaseCurrency (string, 3-letter ISO 4217 uppercase, default "USD")
+Status (PortfolioStatus: ACTIVE | DISABLED, default ACTIVE)
+Notes (string?, <= 512 chars)
+CreatedAt / UpdatedAt (from BaseEntity)
 ```
 
 ## Behavior
 
-- Create portfolio.
-- Rename portfolio.
-- Activate portfolio.
-- Disable portfolio.
-- Add or update positions.
-- Calculate portfolio value.
+- `Portfolio.Create(userId, name, baseCurrency = "USD", notes = null)` — Factory method.
+- `Rename(name)` — Validates and updates `Name`.
+- `Activate()` — Sets `Status = PortfolioStatus.ACTIVE`.
+- `Disable()` — Sets `Status = PortfolioStatus.DISABLED`.
 
 ## Invariants
 
-- A portfolio must belong to exactly one user.
-- A disabled portfolio cannot accept new trading activity.
-- A portfolio identifier must be unique.
-- Portfolio state transitions must be valid.
+- A portfolio must belong to exactly one user (`UserId != Guid.Empty`).
+- `Name` is required and at most 128 characters; unique per user at the persistence level.
+- `BaseCurrency` is normalized to a 3-character uppercase ISO code (default `USD`).
+- A `DISABLED` portfolio cannot accept new trading activity (BR-004).
 
 ---
 
-# 5. Asset
+# 5. Asset (`Asset.cs` — Implemented in Domain)
 
 ## Responsibility
 
-Represents a tradable financial instrument.
+Represents a tradable financial instrument and its latest simulated market price.
 
 ## Key Attributes
 
 ```text
-AssetId
-Symbol
-Name
-AssetType
-Status
+Id (Guid)
+Symbol (string, required, <= 16 chars, normalized uppercase)
+Name (string, required, <= 256 chars, trimmed)
+AssetType (AssetType: STOCK | ETF)
+CurrentPrice (decimal, >= 0)
+Currency (string, 3-letter ISO 4217 uppercase, default "USD")
+PriceUpdatedAt (DateTime UTC)
+Status (AssetStatus: ACTIVE | INACTIVE, default ACTIVE)
 ```
 
 ## Behavior
 
-- Activate.
-- Disable.
+- `Asset.Create(symbol, name, assetType, currentPrice, currency = "USD")` — Normalizes `Symbol` and `Currency` to uppercase and sets `PriceUpdatedAt = DateTime.UtcNow`.
+- `RefreshPrice(price)` — Updates `CurrentPrice` (must be `>= 0`) and refreshes `PriceUpdatedAt = DateTime.UtcNow`.
+- `Activate()` — Sets `Status = AssetStatus.ACTIVE`.
+- `Deactivate()` — Sets `Status = AssetStatus.INACTIVE`.
 
 ## Invariants
 
-- Symbol must be unique within its asset universe.
-- An inactive asset cannot be used for new orders.
+- `Symbol` must be non-empty, uppercase, `<= 16` chars, and unique across the asset catalog.
+- `CurrentPrice` must not be negative (`>= 0`).
+- An `INACTIVE` asset cannot be used for new orders (BR-007).
 
 ---
 
-# 6. Position
+# 6. Position (`Position.cs` — Implemented in Domain)
 
 ## Responsibility
 
-Represents the quantity of an asset currently held by a portfolio.
+Represents the quantity and cost basis of one asset held within one portfolio.
 
 ## Key Attributes
 
 ```text
-PositionId
-PortfolioId
-AssetId
-Quantity
-AverageEntryPrice
+Id (Guid)
+PortfolioId (Guid, non-empty)
+AssetId (Guid, non-empty)
+Quantity (decimal, >= 0)
+AverageEntryPrice (decimal?, null when Quantity == 0)
+RealizedPnL (decimal, default 0)
+IsClosed (computed bool: Quantity == 0)
 ```
 
 ## Behavior
 
-- Increase quantity.
-- Decrease quantity.
-- Recalculate average entry price.
-- Calculate unrealized P/L.
+- `Position.Create(portfolioId, assetId)` — Initializes a zero-quantity closed position (`Quantity = 0`, `AverageEntryPrice = null`, `RealizedPnL = 0`).
+- `ApplyBuy(quantity, price)` — Increases `Quantity` and updates `AverageEntryPrice` using the weighted-average cost formula:
+  - If `Quantity == 0`: `AverageEntryPrice = price`
+  - If `Quantity > 0`: `AverageEntryPrice = (previousQty * previousAvg + quantity * price) / (previousQty + quantity)`
+- `ApplySell(quantity, price)` — Enforces long-only rule (`quantity <= Quantity`), accumulates `RealizedPnL += (price - AverageEntryPrice) * quantity`, decreases `Quantity -= quantity`, and resets `AverageEntryPrice = null` when `Quantity == 0`.
 
 ## Invariants
 
-- Position quantity must not become invalid.
-- A sell operation must satisfy the applicable position rules.
-- Average entry price must remain mathematically consistent with the position state.
+- `Quantity` must never be negative (`Quantity >= 0`, long-only MVP per BR-023).
+- Both buy and sell quantities and prices must be strictly positive (`> 0`).
+- Selling more than the held `Quantity` throws `DomainException`.
+- When `Quantity == 0` (closed position), `AverageEntryPrice` is `null`.
 
 ---
 
-# 7. Order
+# 7. Order (`Order.cs` — Implemented in Domain)
 
 ## Responsibility
 
-Represents an investor's intent to buy or sell an asset.
+Represents an investor's intent to buy or sell an asset, enforcing the order state machine.
 
 ## Key Attributes
 
 ```text
-OrderId
-PortfolioId
-AssetId
-Side
-OrderType
-Quantity
-LimitPrice
-Status
-CreatedAt
-UpdatedAt
+Id (Guid)
+PortfolioId (Guid, non-empty)
+AssetId (Guid, non-empty)
+Side (OrderSide: BUY | SELL)
+OrderType (OrderType: MARKET | LIMIT)
+Quantity (decimal, > 0)
+LimitPrice (decimal?, required and > 0 when LIMIT; null when MARKET)
+FilledQuantity (decimal, default 0, <= Quantity)
+RemainingQuantity (computed decimal: Quantity - FilledQuantity)
+Status (OrderStatus: PENDING | PROCESSING | FILLED | REJECTED | CANCELLED)
+RejectionReason (string?, <= 256 chars, set on REJECTED)
+CompletedAt (DateTime? UTC, set on FILLED, REJECTED, or CANCELLED)
+CreatedAt / UpdatedAt (from BaseEntity)
 ```
 
 ## Order Side
@@ -200,73 +252,80 @@ CANCELLED
 
 ## Behavior
 
-- Create.
-- Start processing.
-- Fill.
-- Reject.
-- Cancel.
+- `Order.Create(portfolioId, assetId, side, orderType, quantity, limitPrice = null)` — Validates inputs; requires positive `limitPrice` for `LIMIT` orders and ignores/nullifies `limitPrice` for `MARKET` orders. Starts in `PENDING`.
+- `StartProcessing()` — Transitions `PENDING → PROCESSING`.
+- `Fill(executedQuantity)` — Transitions `PROCESSING → FILLED`, adds `executedQuantity` to `FilledQuantity` (must satisfy `0 < executedQuantity <= RemainingQuantity`), and sets `CompletedAt = DateTime.UtcNow`.
+- `Reject(reason)` — Transitions `PENDING` or `PROCESSING → REJECTED`, records trimmed `RejectionReason` (`1..256` chars), and sets `CompletedAt = DateTime.UtcNow`.
+- `Cancel()` — Transitions `PENDING → CANCELLED` and sets `CompletedAt = DateTime.UtcNow`.
 
 ## Invariants
 
-- Quantity must be greater than zero.
-- Limit orders must have a valid limit price.
-- An order must belong to an active portfolio.
-- An order must reference an active asset.
-- Invalid state transitions are rejected.
-- A filled order cannot be cancelled.
-- A cancelled order cannot be filled.
+- `Quantity > 0`.
+- `LIMIT` orders require `LimitPrice > 0`; `MARKET` orders always have `LimitPrice == null`.
+- State transitions strictly follow the state machine (BR-012).
+- `FILLED`, `REJECTED`, and `CANCELLED` are terminal states (`CompletedAt != null`).
 
 ---
 
-# 8. Execution
+# 8. Execution (`Execution.cs` — Implemented in Domain)
 
 ## Responsibility
 
-Represents an execution result for an order.
+Represents an immutable execution record generated when the simulated execution engine fills an order.
 
 ## Key Attributes
 
 ```text
-ExecutionId
-OrderId
-ExecutedQuantity
-ExecutionPrice
-ExecutedAt
+Id (Guid)
+OrderId (Guid, non-empty)
+ExecutedQuantity (decimal, > 0)
+ExecutionPrice (decimal, > 0)
+Fee (decimal, >= 0, default 0)
+ExecutedAt (DateTime UTC)
 ```
+
+## Behavior
+
+- `Execution.Create(orderId, executedQuantity, executionPrice, fee = 0, executedAt = null)` — Creates an immutable execution record.
 
 ## Invariants
 
-- Executed quantity must be greater than zero.
-- Executed quantity must not exceed the order quantity.
-- An execution must belong to a valid order.
-- The same execution must not be applied more than once.
+- `ExecutedQuantity > 0` and `ExecutionPrice > 0`.
+- `Fee >= 0`.
+- `ExecutedQuantity <= Order.Quantity` (enforced by `Order.Fill(executedQuantity)` during the execution workflow).
+- One execution per order in the MVP (enforced by unique index `IX_Executions_OrderId`).
 
 ---
 
-# 9. Transaction
+# 9. Transaction (`Transaction.cs` — Implemented in Domain)
 
 ## Responsibility
 
-Represents a completed financial transaction resulting from an order execution.
+Represents an immutable historical financial transaction produced by a successful order execution.
 
 ## Key Attributes
 
 ```text
-TransactionId
-OrderId
-PortfolioId
-AssetId
-Side
-Quantity
-Price
-ExecutedAt
+Id (Guid)
+OrderId (Guid, non-empty)
+ExecutionId (Guid, non-empty)
+PortfolioId (Guid, non-empty)
+AssetId (Guid, non-empty)
+Side (OrderSide: BUY | SELL)
+Quantity (decimal, > 0)
+Price (decimal, > 0)
+GrossAmount (decimal, computed at creation as Quantity * Price)
+Fee (decimal, >= 0, default 0)
+ExecutedAt (DateTime UTC)
 ```
+
+## Behavior
+
+- `Transaction.Create(orderId, executionId, portfolioId, assetId, side, quantity, price, fee = 0, executedAt = null)` — Creates an immutable financial snapshot with `GrossAmount = quantity * price`.
 
 ## Characteristics
 
-Transactions represent historical financial facts.
-
-Once created, transaction records should be treated as immutable from normal application operations.
+Transactions represent historical financial facts. Once created, transaction records are never modified or deleted.
 
 ---
 

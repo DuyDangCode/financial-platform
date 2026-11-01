@@ -15,7 +15,14 @@ Module-specific endpoint references live in their own files:
 | Module      | Reference                          | Status     |
 | ----------- | ---------------------------------- | ---------- |
 | Auth        | [auth.md](./auth.md)               | Implemented|
+| User        | [user.md](./user.md)               | Planned    |
+| Role        | [role.md](./role.md)               | Planned    |
+| Permission  | [permission.md](./permission.md)   | Planned    |
+| Account     | [account.md](./account.md)         | Planned    |
+| Asset       | [asset.md](./asset.md)             | Planned    |
+| Order       | [order.md](./order.md)             | Planned    |
 | Transaction | [transaction.md](./transaction.md) | Planned    |
+| Dashboard   | [dashboard.md](./dashboard.md)     | Planned    |
 
 The API is implemented with ASP.NET Core Web API (.NET 8) and follows a
 controller-based REST style.
@@ -146,17 +153,18 @@ See [auth.md](./auth.md) for the full endpoint reference.
 
 ## 5.2. Planned
 
-Controllers exist as placeholders and will be implemented incrementally.
-Each module gets its own reference file once work starts:
+Controllers exist as placeholders (or are planned for upcoming phases) and will be implemented incrementally. Each module has a full specification document:
 
-| Controller   | Resource      | Purpose                                  | Reference                          |
-| ------------ | ------------- | ---------------------------------------- | ---------------------------------- |
-| User         | `api/user`    | Profile management, user administration.| TBD                                |
-| Role         | `api/role`    | Role management.                         | TBD                                |
-| Permission   | `api/permission` | Permission management.               | TBD                                |
-| Account      | `api/account` | Portfolio accounts.                      | TBD                                |
-| Transaction  | `api/transaction` | Transactions history and operations. | [transaction.md](./transaction.md) |
-| Dashboard    | `api/dashboard` | Aggregated portfolio overview data.    | TBD                                |
+| Controller   | Resource          | Purpose                                                      | Reference                          |
+| ------------ | ----------------- | ------------------------------------------------------------ | ---------------------------------- |
+| User         | `api/user`        | Profile management, activity history, user administration.   | [user.md](./user.md)               |
+| Role         | `api/role`        | Role management and user-role assignments.                   | [role.md](./role.md)               |
+| Permission   | `api/permission`  | Effective user permissions and role-permission matrix.       | [permission.md](./permission.md)   |
+| Account      | `api/account`     | Portfolio CRUD, positions, and portfolio valuation/P&L.      | [account.md](./account.md)         |
+| Asset        | `api/asset`       | Asset catalog, search, market price refresh, status toggle.  | [asset.md](./asset.md)             |
+| Order        | `api/order`       | Order placement, simulated execution, cancellation, history. | [order.md](./order.md)             |
+| Transaction  | `api/transaction` | Immutable transaction history and inspection.                | [transaction.md](./transaction.md) |
+| Dashboard    | `api/dashboard`   | Aggregated investor portfolio overview & admin audit summary.| [dashboard.md](./dashboard.md)     |
 
 ---
 

@@ -167,7 +167,20 @@ If partial execution is supported in the future, the aggregate executed quantity
 
 ## BR-018 — Execution Can Only Occur for an Eligible Order
 
-Only orders in an execution-eligible state may be executed.
+Only orders in an execution-eligible state (`PENDING → PROCESSING`) may be executed.
+
+### Simulated Execution Pricing Rules (MVP)
+
+When an order is evaluated against the target `Asset.CurrentPrice`:
+
+1. **Pre-execution checks:**
+   - The owning `Portfolio.Status` must be `ACTIVE` (if disabled after order placement, the order is `REJECTED` with reason `"Portfolio is disabled."`).
+   - The `Asset.Status` must be `ACTIVE` and `Asset.CurrentPrice > 0` (otherwise `REJECTED` with reason `"Asset is inactive or has no valid market price."`).
+   - For a `SELL` order, the portfolio must hold a `Position` for that asset with `Position.Quantity >= Order.Quantity` (otherwise `REJECTED` with reason `"Insufficient position quantity."`).
+2. **Order Type evaluation:**
+   - **`MARKET` order:** Executes immediately at `ExecutionPrice = Asset.CurrentPrice` for `ExecutedQuantity = Order.Quantity`.
+   - **`LIMIT` `BUY` order:** Executes if `Asset.CurrentPrice <= Order.LimitPrice` at `ExecutionPrice = Asset.CurrentPrice`. If `Asset.CurrentPrice > Order.LimitPrice`, the order remains `PENDING` (or is rejected if synchronous-only mode is requested).
+   - **`LIMIT` `SELL` order:** Executes if `Asset.CurrentPrice >= Order.LimitPrice` at `ExecutionPrice = Asset.CurrentPrice`. If `Asset.CurrentPrice < Order.LimitPrice`, the order remains `PENDING`.
 
 ---
 
@@ -191,7 +204,7 @@ One Position Update
 
 ## BR-020 — Position Belongs to One Portfolio and One Asset
 
-A position represents a single asset within a single portfolio.
+A position represents a single asset within a single portfolio (`Unique(PortfolioId, AssetId)`).
 
 ---
 
@@ -200,9 +213,7 @@ A position represents a single asset within a single portfolio.
 For a BUY transaction:
 
 ```text
-New Quantity
-=
-Current Quantity + Executed Quantity
+New Quantity = Current Quantity + Executed Quantity
 ```
 
 ---
@@ -212,28 +223,46 @@ Current Quantity + Executed Quantity
 For a SELL transaction:
 
 ```text
-New Quantity
-=
-Current Quantity - Executed Quantity
+New Quantity = Current Quantity - Executed Quantity
 ```
 
 ---
 
-## BR-023 — Position Cannot Become Invalid
+## BR-023 — Position Cannot Become Invalid (Long-Only MVP)
 
-The system must prevent a position from entering an invalid state.
+The system must prevent a position from entering an invalid state:
 
-The exact treatment of negative positions depends on whether short selling is supported.
+```text
+Position.Quantity >= 0
+Executed Sell Quantity <= Position.Quantity
+```
 
-Short selling is outside the MVP scope.
+Short selling is outside the MVP scope. When `Position.Quantity` reaches `0`, the position is considered closed (`IsClosed == true`), its row is retained for historical `RealizedPnL` tracking, and `AverageEntryPrice` resets to `null`.
 
 ---
 
-## BR-024 — Average Entry Price Must Be Consistent
+## BR-024 — Average Entry Price and Realized P/L Must Be Consistent
 
-For supported long positions, the average entry price must reflect the applicable acquisition cost of the remaining position.
+For supported long positions, the average entry price reflects the weighted-average acquisition cost of the remaining position:
 
-The calculation must be deterministic and use appropriate monetary precision.
+- **On First BUY (when `Current Quantity == 0`):**
+  ```text
+  New AverageEntryPrice = ExecutionPrice
+  ```
+- **On Subsequent BUY (when `Current Quantity > 0`):**
+  ```text
+  New AverageEntryPrice =
+      (Current Quantity × Current AverageEntryPrice + Executed Quantity × ExecutionPrice)
+      / (Current Quantity + Executed Quantity)
+  ```
+- **On SELL (`0 < Executed Quantity <= Current Quantity`):**
+  - `AverageEntryPrice` does **not** change when partially selling a position (unless `New Quantity == 0`, in which case `AverageEntryPrice` resets to `null`).
+  - `RealizedPnL` accumulates the profit or loss locked in by the sale:
+    ```text
+    RealizedPnL += (ExecutionPrice - AverageEntryPrice) × Executed Quantity
+    ```
+
+All calculations use `decimal` arithmetic (`numeric(18,4)` for prices/amounts, `numeric(18,8)` for quantities).
 
 ---
 
@@ -241,7 +270,11 @@ The calculation must be deterministic and use appropriate monetary precision.
 
 ## BR-025 — Successful Execution Produces a Transaction
 
-A successfully executed order must produce the corresponding transaction.
+A successfully executed order must produce the corresponding transaction with snapshot fields:
+
+```text
+GrossAmount = Quantity × Price
+```
 
 ---
 
@@ -255,50 +288,54 @@ Corrections should be handled through appropriate compensating operations rather
 
 ## BR-027 — Transaction Must Reference Its Source Order
 
-Every transaction must be traceable to the order that produced it.
+Every transaction must be traceable to the order (`OrderId`) and execution (`ExecutionId`) that produced it.
 
 ---
 
 # 9. Portfolio Valuation Rules
 
-## BR-028 — Position Value
+## BR-028 — Position Value and Cost Basis
 
-The value of a position is:
+For an open position (`Quantity > 0`):
 
 ```text
-Position Value
-=
-Quantity × Current Price
+Position Cost Basis  = Quantity × AverageEntryPrice
+Position Market Value = Quantity × Asset.CurrentPrice
 ```
 
 ---
 
 ## BR-029 — Portfolio Value
 
-The portfolio value is:
+The total market value of a portfolio is the sum of the market values of all open positions:
 
 ```text
-Portfolio Value
-=
-Σ(Position Value)
+Portfolio Market Value = Σ(Position.Quantity × Asset.CurrentPrice)
+Portfolio Cost Basis   = Σ(Position.Quantity × Position.AverageEntryPrice)
 ```
 
 Cash balance is not included in the initial simplified model unless explicitly introduced into the domain.
 
 ---
 
-## BR-030 — Unrealized P/L
+## BR-030 — Profit and Loss (Unrealized, Realized, and Total P/L)
 
-For a long position:
+For a single open long position (`Quantity > 0`):
 
 ```text
-Unrealized P/L
-=
-(Current Price - Average Entry Price)
-× Quantity
+Position Unrealized P/L = (Asset.CurrentPrice - Position.AverageEntryPrice) × Position.Quantity
+Position Unrealized P/L % = ((Asset.CurrentPrice - Position.AverageEntryPrice) / Position.AverageEntryPrice) × 100
 ```
 
-The exact calculation may evolve when fees, multiple lots, or other financial concepts are introduced.
+At the portfolio level (across all positions belonging to the portfolio, including closed positions for realized P/L):
+
+```text
+Portfolio Unrealized P/L = Σ(Position Unrealized P/L for open positions)
+Portfolio Realized P/L   = Σ(Position.RealizedPnL across all positions in portfolio)
+Portfolio Total P/L      = Portfolio Unrealized P/L + Portfolio Realized P/L
+```
+
+The exact calculation may evolve when fees, multiple tax lots, or cash ledgers are introduced.
 
 ---
 
